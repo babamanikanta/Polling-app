@@ -1,13 +1,9 @@
 import mongoose from "mongoose";
 
-const optionSchema = new mongoose.Schema({
-  text: String,
-  votes: { type: Number, default: 0 },
-});
-
 const pollSchema = new mongoose.Schema({
-  question: String,
-  options: [optionSchema],
+  question: { type: String, required: true },
+  options: [{ text: String, votes: { type: Number, default: 0 } }], // Array of objects with text and votes
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model("Poll", pollSchema);

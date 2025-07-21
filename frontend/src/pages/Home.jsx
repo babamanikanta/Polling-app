@@ -11,20 +11,18 @@ export default function Home() {
     setPolls(storedPolls);
   }, []);
 
-  const handleDelete = (id) => {
-    const updatedPolls = polls.filter((poll) => poll.id !== id);
+  const handleDelete = (idToDelete) => {
+    const updatedPolls = polls.filter((poll) => poll._id !== idToDelete);
     setPolls(updatedPolls);
     localStorage.setItem("polls", JSON.stringify(updatedPolls));
   };
 
   const handleEdit = (poll) => navigate("/create", { state: { poll } });
 
-  const handleShare = (pollId) => {
-    const pollLink = `${window.location.origin}/poll/${pollId}`; // Example link structure
-    navigator.clipboard
-      .writeText(pollLink)
-      .then(() => alert(`Link copied: ${pollLink}`))
-      .catch((err) => console.error("Failed to copy: ", err));
+  const handleShare = (id) => {
+    const url = `${window.location.origin}/poll/${id}`;
+    navigator.clipboard.writeText(url);
+    alert("Link copied to clipboard!");
   };
 
   return (
@@ -41,11 +39,11 @@ export default function Home() {
           <div className="grid gap-6">
             {polls.map((poll) => (
               <PollCard
-                key={poll.id}
+                key={poll._id}
                 poll={poll}
-                onDelete={handleDelete}
                 onEdit={handleEdit}
-                onShare={handleShare} // Pass the share function as a prop
+                onDelete={handleDelete}
+                onShare={handleShare}
               />
             ))}
           </div>

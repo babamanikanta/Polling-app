@@ -14,7 +14,7 @@ export default function CreatePoll() {
   useEffect(() => {
     if (isEditing) {
       setQuestion(pollToEdit.question);
-      setOptions(pollToEdit.options);
+      setOptions(pollToEdit.options.map((opt) => opt.text));
       setExpiresAt(pollToEdit.expiresAt || "");
     }
   }, [isEditing, pollToEdit]);
@@ -36,26 +36,42 @@ export default function CreatePoll() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const validOptions = options.filter((opt) => opt.trim());
-    if (validOptions.length < 2) {
-      alert("Please provide at least two non-empty options.");
+
+    if (!question || options.length < 2) {
+      alert("Please enter a question and at least two options.");
       return;
     }
-    const newPoll = {
-      id: isEditing ? pollToEdit.id : uuidv4(),
-      question,
-      options: validOptions,
-      votes: isEditing ? pollToEdit.votes : Array(validOptions.length).fill(0),
-      expiresAt: expiresAt || null,
-    };
-    const storedPolls = JSON.parse(localStorage.getItem("polls") || "[]");
-    const updatedPolls = isEditing
-      ? storedPolls.map((p) => (p.id === pollToEdit.id ? newPoll : p))
-      : [...storedPolls, newPoll];
-    localStorage.setItem("polls", JSON.stringify(updatedPolls));
-    navigate("/");
+
+    const formattedOptions = options.map((opt) => ({ text: opt }));
+
+    try {
+      const res = await fetch("http://localhost:5000/api/polls", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question,
+          options: formattedOptions,
+          expiresAt,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to create poll");
+
+      const newPoll = await res.json();
+
+      // Save to localStorage or state
+      const storedPolls = JSON.parse(localStorage.getItem("polls") || "[]");
+      localStorage.setItem("polls", JSON.stringify([...storedPolls, newPoll]));
+
+      navigate("/");
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Something went wrong while creating the poll.");
+    }
   };
 
   return (
@@ -64,7 +80,10 @@ export default function CreatePoll() {
         <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">
           {isEditing ? "Edit Poll" : "Create a Poll"}
         </h1>
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-xl shadow-md p-6 border border-gray-200"
+        >
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">
               Poll Question
@@ -78,6 +97,7 @@ export default function CreatePoll() {
               required
             />
           </div>
+
           {options.map((opt, i) => (
             <div key={i} className="mb-4 flex items-center gap-2">
               <div className="flex-1">
@@ -104,6 +124,7 @@ export default function CreatePoll() {
               )}
             </div>
           ))}
+
           <button
             type="button"
             onClick={handleAddOption}
@@ -112,6 +133,7 @@ export default function CreatePoll() {
           >
             + Add another option
           </button>
+
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">
               Expiration Date (Optional)
@@ -123,14 +145,14 @@ export default function CreatePoll() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
+
           <button
             type="submit"
-            onClick={handleSubmit}
             className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
             {isEditing ? "Update Poll" : "Submit Poll"}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );
