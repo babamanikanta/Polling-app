@@ -1,3 +1,4 @@
+console.log("pollRoutes loaded"); // Add this at the top
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 

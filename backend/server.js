@@ -28,7 +28,21 @@ mongoose
   });
 
 // Routes
-app.use(pollRoutes);
+app.use("/api/polls", pollRoutes);
+
+// Test GET route
+app.get("/api/test", (req, res) => {
+  res.json({ message: "GET works!" });
+});
+
+// Test POST route
+app.post("/api/testpost", (req, res) => {
+  res.json({ message: "POST works!" });
+});
+
+app.post("/api/polls", (req, res) => {
+  res.json({ message: "Direct POST /api/polls works!" });
+});
 
 // Server Listener
 const PORT = process.env.PORT || 5000;

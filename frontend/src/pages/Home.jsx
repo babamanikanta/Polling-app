@@ -12,7 +12,9 @@ export default function Home() {
   }, []);
 
   const handleDelete = (idToDelete) => {
-    const updatedPolls = polls.filter((poll) => poll._id !== idToDelete);
+    const updatedPolls = polls.filter(
+      (poll) => poll._id !== idToDelete && poll.id !== idToDelete
+    );
     setPolls(updatedPolls);
     localStorage.setItem("polls", JSON.stringify(updatedPolls));
   };
@@ -39,10 +41,10 @@ export default function Home() {
           <div className="grid gap-6">
             {polls.map((poll) => (
               <PollCard
-                key={poll._id}
+                key={poll._id ? poll._id : poll.id} // Always use a unique key
                 poll={poll}
-                onEdit={handleEdit}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
                 onShare={handleShare}
               />
             ))}

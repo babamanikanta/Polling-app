@@ -1,8 +1,10 @@
 import { useState } from "react";
 
 export default function PollCard({ poll, onDelete, onEdit, onShare }) {
+  // Ensure poll.options is always an array
+  const options = Array.isArray(poll.options) ? poll.options : [];
   const [votes, setVotes] = useState(
-    poll.votes || poll.options.map((opt) => opt.votes || 0)
+    poll.votes || options.map((opt) => opt.votes || 0)
   );
   const [hasVoted, setHasVoted] = useState(false);
   const totalVotes = votes.reduce((sum, vote) => sum + vote, 0);
@@ -25,14 +27,14 @@ export default function PollCard({ poll, onDelete, onEdit, onShare }) {
   };
 
   const handleDelete = () => {
-    console.log("Deleting poll:", poll._id); // This should log correct poll ID
+    console.log("Deleting poll:", poll._id);
     onDelete(poll._id);
   };
 
   const handleEdit = () => onEdit(poll);
   const handleShare = () => {
     if (onShare) {
-      onShare(poll._id); // Call parent share handler
+      onShare(poll._id);
     } else {
       console.warn("onShare function not provided");
     }
@@ -47,9 +49,9 @@ export default function PollCard({ poll, onDelete, onEdit, onShare }) {
         <p className="text-red-500 font-medium mb-2">This poll has expired</p>
       )}
       <div className="grid gap-2">
-        {poll.options.map((opt, i) => (
+        {options.map((opt, i) => (
           <button
-            key={i}
+            key={opt._id || i} // Use a unique key if available
             onClick={() => handleVote(i)}
             disabled={isExpired || hasVoted}
             className="p-3 text-left rounded-lg border-2 border-indigo-300 hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200"
@@ -77,13 +79,13 @@ export default function PollCard({ poll, onDelete, onEdit, onShare }) {
           Edit
         </button>
         <button
-          onClick={handleDelete}
+          onClick={() => onDelete(poll._id || poll.id)}
           className="text-red-600 hover:text-red-800 font-medium"
         >
           Delete
         </button>
         <button
-          onClick={handleShare}
+          onClick={() => onShare(poll._id || poll.id)}
           className="text-green-600 hover:text-green-800 font-medium"
         >
           Share
