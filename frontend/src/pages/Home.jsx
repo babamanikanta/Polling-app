@@ -1,22 +1,31 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PollCard from "../components/PollCard";
+import axios from "axios";
 
 export default function Home() {
   const [polls, setPolls] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedPolls = JSON.parse(localStorage.getItem("polls") || "[]");
-    setPolls(storedPolls);
+    // Fetch polls from backend instead of localStorage
+    axios
+      .get("http://localhost:5000/api/polls")
+      .then((res) => {
+        setPolls(res.data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch polls:", err);
+      });
   }, []);
 
   const handleDelete = (idToDelete) => {
+    // Since backend does not have delete route yet,
+    // Only update UI locally
     const updatedPolls = polls.filter(
-      (poll) => poll._id !== idToDelete && poll.id !== idToDelete
+      (poll) => poll.id !== idToDelete && poll._id !== idToDelete
     );
     setPolls(updatedPolls);
-    localStorage.setItem("polls", JSON.stringify(updatedPolls));
   };
 
   const handleEdit = (poll) => navigate("/create", { state: { poll } });
@@ -41,7 +50,7 @@ export default function Home() {
           <div className="grid gap-6">
             {polls.map((poll) => (
               <PollCard
-                key={poll._id ? poll._id : poll.id} // Always use a unique key
+                key={poll.id || poll._id}
                 poll={poll}
                 onDelete={handleDelete}
                 onEdit={handleEdit}

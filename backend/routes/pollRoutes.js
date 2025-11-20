@@ -1,12 +1,13 @@
-console.log("pollRoutes loaded"); // Add this at the top
+console.log("pollRoutes loaded");
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 
 const router = express.Router();
 
-let polls = []; // temporary storage
+// Temporary in-memory storage
+let polls = [];
 
-// POST /api/polls
+// CREATE a poll
 router.post("/", (req, res) => {
   const { question, options, expiresAt } = req.body;
 
@@ -17,7 +18,10 @@ router.post("/", (req, res) => {
   const newPoll = {
     id: uuidv4(),
     question,
-    options: options.map((opt) => ({ text: opt.text, votes: 0 })),
+    options: options.map((opt) => ({
+      text: opt.text,
+      votes: 0,
+    })),
     createdAt: new Date(),
     expiresAt: expiresAt || null,
   };
@@ -25,6 +29,43 @@ router.post("/", (req, res) => {
   polls.push(newPoll);
 
   res.status(201).json(newPoll);
+});
+
+// GET all polls
+router.get("/", (req, res) => {
+  res.json(polls);
+});
+
+// GET poll by ID
+router.get("/:id", (req, res) => {
+  const poll = polls.find((p) => p.id === req.params.id);
+
+  if (!poll) {
+    return res.status(404).json({ message: "Poll not found" });
+  }
+
+  res.json(poll);
+});
+
+// ⭐ VOTE on a poll WITH EXPIRY CHECK
+router.post("/:id/vote", (req, res) => {
+  const { index } = req.body;
+  const poll = polls.find((p) => p.id === req.params.id);
+
+  if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+  // ⭐ EXPIRY CHECK
+  if (poll.expiresAt && new Date() > new Date(poll.expiresAt)) {
+    return res.status(400).json({ message: "Poll expired" });
+  }
+
+  if (index === undefined || index < 0 || index >= poll.options.length) {
+    return res.status(400).json({ message: "Invalid option index" });
+  }
+
+  poll.options[index].votes += 1;
+
+  res.json(poll);
 });
 
 export default router;

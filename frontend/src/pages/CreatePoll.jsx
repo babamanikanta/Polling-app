@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import axios from "axios"; // ✅ IMPORTANT — axios added
 
 export default function CreatePoll() {
   const location = useLocation();
@@ -34,36 +35,23 @@ export default function CreatePoll() {
       return;
     }
 
+    // Backend expects { text: "Option" }
     const formattedOptions = options.map((opt) => ({ text: opt }));
 
-    // Get existing polls from localStorage
-    const storedPolls = JSON.parse(localStorage.getItem("polls") || "[]");
-
-    if (editingPoll) {
-      // Update existing poll
-      const updatedPolls = storedPolls.map((poll) =>
-        (poll._id || poll.id) === (editingPoll._id || editingPoll.id)
-          ? {
-              ...poll,
-              question,
-              options: formattedOptions,
-              expiresAt,
-            }
-          : poll
-      );
-      localStorage.setItem("polls", JSON.stringify(updatedPolls));
-    } else {
-      // Create new poll
-      const newPoll = {
-        id: Date.now().toString(),
+    try {
+      const response = await axios.post("http://localhost:5000/api/polls", {
         question,
         options: formattedOptions,
         expiresAt,
-      };
-      localStorage.setItem("polls", JSON.stringify([...storedPolls, newPoll]));
-    }
+      });
 
-    navigate("/");
+      console.log("Poll created:", response.data);
+
+      navigate("/"); // Go back to home after creating poll
+    } catch (error) {
+      console.error("Error creating poll:", error);
+      alert("Failed to create poll. Check backend.");
+    }
   };
 
   return (

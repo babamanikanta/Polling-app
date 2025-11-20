@@ -1,6 +1,6 @@
-// filepath: f:\btech\MERN\polling-app\frontend\src\pages\PollView.jsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function PollView() {
   const { id } = useParams();
@@ -9,34 +9,35 @@ export default function PollView() {
   const [votes, setVotes] = useState([]);
   const [hasVoted, setHasVoted] = useState(false);
 
+  // Fetch poll from backend
   useEffect(() => {
-    const storedPolls = JSON.parse(localStorage.getItem("polls") || "[]");
-    const foundPoll = storedPolls.find((p) => p._id === id || p.id === id);
-    setPoll(foundPoll);
-    setVotes(foundPoll ? foundPoll.options.map((opt) => opt.votes || 0) : []);
+    axios
+      .get(`http://localhost:5000/api/polls/${id}`)
+      .then((res) => {
+        setPoll(res.data);
+        setVotes(res.data.options.map((opt) => opt.votes || 0));
+      })
+      .catch(() => {
+        setPoll(null);
+      });
   }, [id]);
 
-  const handleVote = (index) => {
+  const handleVote = async (index) => {
     if (!poll || hasVoted) return;
-    const newVotes = [...votes];
-    newVotes[index] += 1;
-    setVotes(newVotes);
-    setHasVoted(true);
 
-    // Update localStorage
-    const storedPolls = JSON.parse(localStorage.getItem("polls") || "[]");
-    const updatedPolls = storedPolls.map((p) =>
-      (p._id || p.id) === (poll._id || poll.id)
-        ? {
-            ...p,
-            options: p.options.map((opt, i) => ({
-              ...opt,
-              votes: newVotes[i],
-            })),
-          }
-        : p
-    );
-    localStorage.setItem("polls", JSON.stringify(updatedPolls));
+    try {
+      const res = await axios.post(
+        `http://localhost:5000/api/polls/${id}/vote`,
+        { index }
+      );
+
+      setPoll(res.data);
+      setVotes(res.data.options.map((opt) => opt.votes));
+      setHasVoted(true);
+    } catch (err) {
+      console.error("Voting error:", err);
+      alert("Voting failed.");
+    }
   };
 
   if (!poll) {
